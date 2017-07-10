@@ -1,0 +1,16 @@
+version: "3"
+
+services:
+  app:
+    build: .
+    links:
+      - broker
+
+  broker:
+    image: rabbitmq:management
+    environment:
+      RABBITMQ_DEFAULT_USER: "villas"
+      RABBITMQ_DEFAULT_PASS: "s3c0sim4!"
+    ports:
+      - "8080:15672"
+      - "5672:5672"
