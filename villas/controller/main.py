@@ -124,3 +124,6 @@ def main():
         LOGGER.error('Connection timeout!')
     else:
         LOGGER.info('Goodbye')
+
+if __name__=="__main__":
+    main()

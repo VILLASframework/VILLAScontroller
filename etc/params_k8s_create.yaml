@@ -1,20 +1,31 @@
-job:
-  apiVersion: batch/v1
-  kind: Job
-  metadata:
-    name: pi
-  spec:
-    activeDeadlineSeconds: 3600 # kill the Job after 1h
-    backoffLimit: 1 # only try to run pod once
-    ttlSecondsAfterFinished: 3600 # delete the Job resources 1h after completion
-    template:
-      spec:
-        restartPolicy: Never
-        containers:
-        - command:
-          - perl
-          - "-Mbignum=bpi"
-          - "-wle"
-          - print bpi(2000)
-          image: perl
-          name: pi
+# create simulator:
+# villas-controller --config config_k8s.yaml simulator --uuid <kubernetes manager uuid> create -P etc/params_k8s_create.yaml
+# start job:
+# villas-controller --config config_k8s.yaml simulator --uuid <(this) kubernetes simulator uuid> start
+name: "kubernetes simulator"
+location: "ACS lab"
+realm: "de.rwth-aachen.eonerc.acs"
+category: "simulator"
+type: "kubernetes"
+uuid: "c487a470-6af6-11eb-beee-7fa268050224"
+properties:
+  job:
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: pi
+    spec:
+      activeDeadlineSeconds: 3600 # kill the Job after 1h
+      backoffLimit: 1 # only try to run pod once
+      ttlSecondsAfterFinished: 3600 # delete the Job resources 1h after completion
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - command:
+            - perl
+            - "-Mbignum=bpi"
+            - "-wle"
+            - print bpi(2000)
+            image: perl
+            name: pi
