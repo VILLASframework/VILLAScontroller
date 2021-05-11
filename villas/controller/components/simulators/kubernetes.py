@@ -44,7 +44,7 @@ class KubernetesJob(Simulator):
 
         v = k8s.client.V1Volume(
             name='parameters',
-            config_map=c.V1ConfigMapVolumeSource(
+            config_map=k8s.client.V1ConfigMapVolumeSource(
                 name=cm.metadata.name
             )
         )
@@ -79,8 +79,8 @@ class KubernetesJob(Simulator):
     def _create_config_map(self, parameters):
         c = k8s.client.CoreV1Api()
 
-        self.cm = c.V1ConfigMap(
-            metadata=c.V1ObjectMeta(
+        self.cm = k8s.client.V1ConfigMap(
+            metadata=k8s.client.V1ObjectMeta(
                 generate_name='job-parameters-'
             ),
             data={
