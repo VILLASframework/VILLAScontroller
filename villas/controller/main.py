@@ -125,5 +125,5 @@ def main():
     else:
         LOGGER.info('Goodbye')
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
