@@ -32,13 +32,13 @@ class KubernetesJob(Simulator):
         self.manager = manager
 
         # Job template which can be overwritten via start parameter
-        self.job = args.get('job')
+        self.job = args.get('properties', {}).get('job')
+        self.name = self.job['metadata']['name']
 
     def __del__(self):
         pass
 
     def _prepare_job(self, job, parameters):
-        c = k8s.client.CoreV1Api()
 
         cm = self._create_config_map(parameters)
 
@@ -55,26 +55,50 @@ class KubernetesJob(Simulator):
             read_only=True
         )
 
-        job.spec.template.spec.volumes.append(v)
+        env = k8s.client.V1EnvVar(
+            name='VILLAS_PARAMETERS_FILE',
+            value='/config/parameters.json'
+        )
 
-        for c in job.spec.template.spec.containers:
-            c.volume_mounts.append(vm)
-            c.env.append(c.V1EnvVar(
-                name='VILLAS_PARAMETERS_FILE',
-                value='/config/parameters.json'
+        containerList = []
+        for cont in job['spec']['template']['spec']['containers']:
+            containerList.append(k8s.client.V1Container(
+                image=cont['image'],
+                name=cont['name'],
+                command=cont['command'],
+                volume_mounts=[vm],
+                env=[env]
             ))
 
-        return merge(job, {
-            'metadata': {
-                'name': None,
-                'generateName': job.get('metadata').get('name') + '-',
-                'labels': {
-                    'controller': 'villas',
-                    'controller-uuid': self.manager.uuid,
-                    'uuid': self.uuid
-                }
+        jobSpec = k8s.client.V1JobSpec(
+            template=k8s.client.V1PodTemplateSpec(
+                spec=k8s.client.V1PodSpec(
+                    containers=containerList,
+                    volumes=[v],
+                    restart_policy=job['spec']['template']['spec']['restartPolicy']
+                )
+            ),
+            active_deadline_seconds=job['spec']['activeDeadlineSeconds'],
+            backoff_limit=job['spec']['backoffLimit'],
+            ttl_seconds_after_finished=job['spec']['ttlSecondsAfterFinished'],
+        )
+
+        metaData = k8s.client.V1ObjectMeta(
+            name=None,
+            generate_name=job['metadata']['name'] + '-',
+            labels={
+            'controller': 'villas',
+            'controller-uuid': self.manager.uuid,
+            'uuid': self.uuid
             }
-        })
+        )
+
+        return k8s.client.V1Job(
+            api_version=job['apiVersion'],
+            kind=job['kind'],
+            metadata=metaData,
+            spec=jobSpec
+        )
 
     def _create_config_map(self, parameters):
         c = k8s.client.CoreV1Api()
@@ -98,23 +122,24 @@ class KubernetesJob(Simulator):
         parameters = message.payload.get('parameters', {})
 
         job = merge(self.job, job)
-        job = self._prepare_job(self.job, parameters)
+        self.name = job['metadata']['name']
+        v1job = self._prepare_job(self.job, parameters)
 
         b = k8s.client.BatchV1Api()
         self.job = b.create_namespaced_job(
             namespace=self.manager.namespace,
-            body=job)
+            body=v1job)
 
     def stop(self, message):
         b = k8s.client.BatchV1Api()
         self.job = b.delete_namespaced_job(
             namespace=self.manager.namespace,
-            name=self.job.metadata.name)
+            name=self.name)
 
     def _send_signal(self, sig):
         c = k8s.client.api.CoreV1Api()
         resp = k8s.stream.stream(c.connect_get_namespaced_pod_exec,
-                                 self.job.metadata.name, self.namespace,
+                                 self.name, self.manager.namespace,
                                  command=['kill', f'-{sig}', '1'],
                                  stderr=False, stdin=False,
                                  stdout=False, tty=False)
