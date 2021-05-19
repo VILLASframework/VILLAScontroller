@@ -70,12 +70,13 @@ class KubernetesJob(Simulator):
                 env=[env]
             ))
 
+        restartPolicy = job['spec']['template']['spec']['restartPolicy']
         jobSpec = k8s.client.V1JobSpec(
             template=k8s.client.V1PodTemplateSpec(
                 spec=k8s.client.V1PodSpec(
                     containers=containerList,
                     volumes=[v],
-                    restart_policy=job['spec']['template']['spec']['restartPolicy']
+                    restart_policy=restartPolicy
                 )
             ),
             active_deadline_seconds=job['spec']['activeDeadlineSeconds'],
@@ -87,9 +88,9 @@ class KubernetesJob(Simulator):
             name=None,
             generate_name=job['metadata']['name'] + '-',
             labels={
-            'controller': 'villas',
-            'controller-uuid': self.manager.uuid,
-            'uuid': self.uuid
+                'controller': 'villas',
+                'controller-uuid': self.manager.uuid,
+                'uuid': self.uuid
             }
         )
 

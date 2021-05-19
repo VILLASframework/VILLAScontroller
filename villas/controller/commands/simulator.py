@@ -276,7 +276,7 @@ class SimulatorCreateCommand(Command):
 
         message = {
             'action': 'create',
-            'parameters': _get_parameters(args.parameters, args.parameters_file)
+            'parameters': _get_parameters(args.parameters,args.parameters_file)
         }
 
         producer.publish(message, headers=SimulatorCommand.get_headers(args))
@@ -301,7 +301,7 @@ class SimulatorDeleteCommand(Command):
 
         message = {
             'action': 'delete',
-            'parameters': _get_parameters(args.parameters, args.parameters_file)
+            'parameters': _get_parameters(args.parameters,args.parameters_file)
         }
 
         producer.publish(message, headers=SimulatorCommand.get_headers(args))
