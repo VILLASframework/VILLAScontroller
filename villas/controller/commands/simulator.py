@@ -10,7 +10,7 @@ from villas.controller.command import Command
 LOGGER = logging.getLogger(__name__)
 
 
-def _get_parameters(params, params_file):
+def _get_params(params, params_file):
     parameters = {}
 
     try:
@@ -151,16 +151,16 @@ class SimulatorStartCommand(Command):
         message = {'action': 'start'}
 
         if args.parameters is not None:
-            message['parameters'] = _get_parameters(args.parameters,
-                                                    args.parameters_file)
+            message['parameters'] = _get_params(args.parameters,
+                                                args.parameters_file)
 
         try:
             if args.model is not None:
-                message['model'] = _get_parameters(args.model,
-                                                   args.model_file)
+                message['model'] = _get_params(args.model,
+                                                args.model_file)
             if args.results is not None:
-                message['results'] = _get_parameters(args.results,
-                                                     args.results_file)
+                message['results'] = _get_params(args.results,
+                                                    args.results_file)
         except yaml.YAMLError as e:
             LOGGER.error('Failed to parse parameters: %s at line %d column %d',
                          e.msg, e.lineno, e.colno)
@@ -276,7 +276,7 @@ class SimulatorCreateCommand(Command):
 
         message = {
             'action': 'create',
-            'parameters': _get_parameters(args.parameters,args.parameters_file)
+            'parameters': _get_params(args.parameters,args.parameters_file)
         }
 
         producer.publish(message, headers=SimulatorCommand.get_headers(args))
@@ -301,7 +301,7 @@ class SimulatorDeleteCommand(Command):
 
         message = {
             'action': 'delete',
-            'parameters': _get_parameters(args.parameters,args.parameters_file)
+            'parameters': _get_params(args.parameters,args.parameters_file)
         }
 
         producer.publish(message, headers=SimulatorCommand.get_headers(args))
