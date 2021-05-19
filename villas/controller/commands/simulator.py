@@ -157,10 +157,10 @@ class SimulatorStartCommand(Command):
         try:
             if args.model is not None:
                 message['model'] = _get_params(args.model,
-                                                args.model_file)
+                                               args.model_file)
             if args.results is not None:
                 message['results'] = _get_params(args.results,
-                                                    args.results_file)
+                                                 args.results_file)
         except yaml.YAMLError as e:
             LOGGER.error('Failed to parse parameters: %s at line %d column %d',
                          e.msg, e.lineno, e.colno)
@@ -276,7 +276,7 @@ class SimulatorCreateCommand(Command):
 
         message = {
             'action': 'create',
-            'parameters': _get_params(args.parameters,args.parameters_file)
+            'parameters': _get_params(args.parameters, args.parameters_file)
         }
 
         producer.publish(message, headers=SimulatorCommand.get_headers(args))
@@ -301,7 +301,7 @@ class SimulatorDeleteCommand(Command):
 
         message = {
             'action': 'delete',
-            'parameters': _get_params(args.parameters,args.parameters_file)
+            'parameters': _get_params(args.parameters, args.parameters_file)
         }
 
         producer.publish(message, headers=SimulatorCommand.get_headers(args))
