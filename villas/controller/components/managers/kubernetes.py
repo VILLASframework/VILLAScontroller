@@ -102,6 +102,7 @@ class KubernetesManager(Manager):
         try:
             comp = self.components[uuid]
 
+            comp.on_shutdown()
             self.remove_component(comp)
 
         except KeyError:
