@@ -46,18 +46,26 @@ class DummySimulator(Simulator):
         self._schedule_state_transition('running', runtime)
 
     def stop(self, message):
+        super().stop(message)
+
         self._schedule_state_transition('idle')
 
     def pause(self, message):
+        super().pause(message)
+
         self._schedule_state_transition('paused')
 
     def resume(self, message):
+        super().resume(message)
+
         self._schedule_state_transition('running')
 
     def shutdown(self, message):
+        super().shutdown(message)
+
         self._schedule_state_transition('shutdown')
 
     def reset(self, message):
-        self._schedule_state_transition('idle')
-
         super().reset(message)
+
+        self._schedule_state_transition('idle')

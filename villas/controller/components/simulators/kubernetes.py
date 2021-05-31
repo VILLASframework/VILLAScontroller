@@ -126,6 +126,8 @@ class KubernetesJob(Simulator):
         )
 
     def start(self, message):
+        super().start(message)
+
         job = message.payload.get('job', {})
         parameters = message.payload.get('parameters', {})
 
