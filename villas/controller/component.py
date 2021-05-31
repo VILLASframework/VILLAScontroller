@@ -95,6 +95,10 @@ class Component:
         }
 
     @property
+    def schema(self):
+        return self.properties.get('schema', {})
+
+    @property
     def status(self):
         status = {
             'state': self._state,
@@ -113,7 +117,8 @@ class Component:
             'properties': {
                 **self.properties,
                 **self.headers
-            }
+            },
+            'schema': self.schema
         }
 
     def on_message(self, message):

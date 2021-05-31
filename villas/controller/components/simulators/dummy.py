@@ -5,6 +5,26 @@ from villas.controller.components.simulator import Simulator
 
 class DummySimulator(Simulator):
 
+    start_schema = {
+        '$schema': 'http://json-schema.org/draft-07/schema',
+        'type': 'object',
+        'default': {},
+        'required': [
+            'runtime'
+        ],
+        'properties': {
+            'runtime': {
+                '$id': '#/properties/runtime',
+                'description': 'The run time of the simulation',
+                'type': 'number',
+                'default': 1.0,
+                'examples': [
+                    3.0
+                ]
+            }
+        }
+    }
+
     def __init__(self, **args):
         super().__init__(**args)
 
@@ -19,7 +39,11 @@ class DummySimulator(Simulator):
         self.timer.start()
 
     def start(self, message):
-        self._schedule_state_transition('running')
+        super().start(message)
+
+        runtime = self.params.get('runtime', 1.0)
+
+        self._schedule_state_transition('running', runtime)
 
     def stop(self, message):
         self._schedule_state_transition('idle')

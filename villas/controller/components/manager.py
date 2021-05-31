@@ -10,6 +10,17 @@ class Manager(Component):
         # which are managed by this controller
         self.components = {}
 
+    @property
+    def schema(self):
+        return {
+            'create': self.create_schema,
+            **super().schema
+        }
+
+    @property
+    def create_schema(self):
+        return {}
+
     @staticmethod
     def from_dict(dict):
         type = dict.get('type', 'generic')

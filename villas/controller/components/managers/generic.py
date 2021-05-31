@@ -4,6 +4,12 @@ from villas.controller.component import Component
 
 class GenericManager(Manager):
 
+    create_schema = {
+        '$schema': 'http://json-schema.org/draft-04/schema#',
+        'properties': {
+        }
+    }
+
     def create(self, message):
         component = Component.from_dict(message.payload.get('parameters'))
 
