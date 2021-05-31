@@ -100,12 +100,20 @@ class Component:
 
     @property
     def status(self):
+        u = os.uname()
+
         status = {
             'state': self._state,
             'version': version,
             'uptime': time.time() - self.started,
             'host': socket.gethostname(),
-            'kernel': os.uname(),
+            'kernel': {
+                'sysname': u.sysname,
+                'nodename': u.nodename,
+                'release': u.release,
+                'version': u.version,
+                'machine': u.machine
+            },
             **self._status_fields
         }
 
