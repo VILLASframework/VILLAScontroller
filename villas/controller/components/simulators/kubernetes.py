@@ -33,31 +33,31 @@ class KubernetesJob(Simulator):
 
         # Job template which can be overwritten via start parameter
         self.job = args.get('properties', {}).get('job')
-        self.name = self.job['metadata']['name']
+        self.jobname = self.job['metadata']['name']
 
     def __del__(self):
         pass
 
-    def _prepare_job(self, job, parameters):
+    def _prepare_job(self, job, payload):
 
-        cm = self._create_config_map(parameters)
+        cm = self._create_config_map(payload)
 
         v = k8s.client.V1Volume(
-            name='parameters',
+            name='payload',
             config_map=k8s.client.V1ConfigMapVolumeSource(
                 name=cm.metadata.name
             )
         )
 
         vm = k8s.client.V1VolumeMount(
-            name='parameters',
+            name='payload',
             mount_path='/config/',
             read_only=True
         )
 
         env = k8s.client.V1EnvVar(
-            name='VILLAS_PARAMETERS_FILE',
-            value='/config/parameters.json'
+            name='VILLAS_PAYLOAD_FILE',
+            value='/config/payload.json'
         )
 
         containerList = []
@@ -65,7 +65,7 @@ class KubernetesJob(Simulator):
             containerList.append(k8s.client.V1Container(
                 image=cont['image'],
                 name=cont['name'],
-                command=cont['command'],
+                command=cont.get('command'),
                 volume_mounts=[vm],
                 env=[env]
             ))
@@ -101,15 +101,15 @@ class KubernetesJob(Simulator):
             spec=jobSpec
         )
 
-    def _create_config_map(self, parameters):
+    def _create_config_map(self, payload):
         c = k8s.client.CoreV1Api()
 
         self.cm = k8s.client.V1ConfigMap(
             metadata=k8s.client.V1ObjectMeta(
-                generate_name='job-parameters-'
+                generate_name='job-payload-'
             ),
             data={
-                'parameters.json': json.dumps(parameters)
+                'payload.json': json.dumps(payload)
             }
         )
 
@@ -119,23 +119,27 @@ class KubernetesJob(Simulator):
         )
 
     def start(self, message):
+        if type(self.job) is not dict:
+            self.logger.info("Job already started")
+            return
         job = message.payload.get('job', {})
-        parameters = message.payload.get('parameters', {})
+        payload = message.payload
 
         job = merge(self.job, job)
-        self.name = job['metadata']['name']
-        v1job = self._prepare_job(self.job, parameters)
+        self.jobname = job['metadata']['name']
+        v1job = self._prepare_job(self.job, payload)
 
         b = k8s.client.BatchV1Api()
         self.job = b.create_namespaced_job(
             namespace=self.manager.namespace,
             body=v1job)
+        self.jobname = self.job.metadata.name
 
     def stop(self, message):
         b = k8s.client.BatchV1Api()
         self.job = b.delete_namespaced_job(
             namespace=self.manager.namespace,
-            name=self.name)
+            name=self.jobname)
 
     def _send_signal(self, sig):
         c = k8s.client.api.CoreV1Api()
