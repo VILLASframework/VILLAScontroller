@@ -32,8 +32,8 @@ class KubernetesJob(Simulator):
         self.manager = manager
 
         # Job template which can be overwritten via start parameter
-        self.job = args.get('properties', {}).get('job')
-        self.jobname = self.job['metadata']['name']
+        self.jobdict = args.get('properties', {}).get('job')
+        self.jobname = self.jobdict['metadata']['name']
 
     def __del__(self):
         pass
@@ -119,15 +119,12 @@ class KubernetesJob(Simulator):
         )
 
     def start(self, message):
-        if type(self.job) is not dict:
-            self.logger.info("Job already started")
-            return
         job = message.payload.get('job', {})
         payload = message.payload
 
-        job = merge(self.job, job)
+        job = merge(self.jobdict, job)
         self.jobname = job['metadata']['name']
-        v1job = self._prepare_job(self.job, payload)
+        v1job = self._prepare_job(self.jobdict, payload)
 
         b = k8s.client.BatchV1Api()
         self.job = b.create_namespaced_job(
@@ -137,9 +134,11 @@ class KubernetesJob(Simulator):
 
     def stop(self, message):
         b = k8s.client.BatchV1Api()
+        body = k8s.client.V1DeleteOptions(propagation_policy='Background')
         self.job = b.delete_namespaced_job(
             namespace=self.manager.namespace,
-            name=self.jobname)
+            name=self.jobname,
+            body=body)
 
     def _send_signal(self, sig):
         c = k8s.client.api.CoreV1Api()

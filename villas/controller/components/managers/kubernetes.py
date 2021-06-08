@@ -10,13 +10,8 @@ class KubernetesManager(Manager):
 
     def __init__(self, **args):
         super().__init__(**args)
+        self.jobs = []
 
-        self.thread_stop = threading.Event()
-
-        self.pod_watcher_thread = threading.Thread(
-            target=self._run_pod_watcher)
-        self.job_watcher_thread = threading.Thread(
-            target=self._run_job_watcher)
         self.event_watcher_thread = threading.Thread(
             target=self._run_event_watcher)
 
@@ -26,25 +21,10 @@ class KubernetesManager(Manager):
             k8s.config.load_incluster_config()
 
         self.namespace = args.get('namespace', 'default')
-
         self._check_namespace(self.namespace)
 
-        # self.pod_watcher_thread.start()
-        # self.job_watcher_thread.start()
-        # self.event_watcher_thread.start()
-
-    def __del__(self):
-        self.logger.info('Stopping Kubernetes watchers')
-        self.thread_stop.set()
-
-        if self.pod_watcher_thread.is_alive():
-            self.pod_watcher_thread.join()
-
-        if self.job_watcher_thread.is_alive():
-            self.job_watcher_thread.join()
-
-        if self.event_watcher_thread.is_alive():
-            self.event_watcher_thread.join()
+        self.event_watcher_thread.setDaemon(True)
+        self.event_watcher_thread.start()
 
     def _check_namespace(self, ns):
         c = k8s.client.CoreV1Api()
@@ -65,28 +45,16 @@ class KubernetesManager(Manager):
             eo = e.get('object')
 
             self.logger.info('Event: %s (reason=%s)', eo.message, eo.reason)
-
-    def _run_pod_watcher(self):
-        w = k8s.watch.Watch()
-        c = k8s.client.CoreV1Api()
-
-        for sts in w.stream(c.list_namespaced_pod,
-                            namespace=self.namespace):
-            stso = sts.get('object')
-            typ = sts.get('type')
-
-            self.logger.info('%s Pod: %s', typ, stso.metadata.name)
-
-    def _run_job_watcher(self):
-        w = k8s.watch.Watch()
-        b = k8s.client.BatchV1Api()
-
-        for sts in w.stream(b.list_namespaced_job,
-                            namespace=self.namespace):
-            stso = sts.get('object')
-            typ = sts.get('type')
-
-            self.logger.info('%s Job: %s', typ, stso.metadata.name)
+            for ic in self.jobs:
+                if ic.jobname == eo.involved_object.name:
+                    if eo.reason == 'Completed':
+                        ic.change_state('resetting')
+                        ic.stop("nomessage")
+                        ic.change_state('idle')
+                    elif eo.reason == 'SuccessfulCreate':
+                        ic.change_state('running')
+                    else:
+                        self.logger.info('Reason \'%s\' not handled for kubernetes simulator', eo.reason)
 
     def create(self, message):
         parameters = message.payload.get('parameters', {})
@@ -94,6 +62,7 @@ class KubernetesManager(Manager):
         self.logger.info('Creating new KubernetesJob component: %s', ic)
 
         self.add_component(ic)
+        self.jobs.append(ic)
 
     def delete(self, message):
         parameters = message.payload.get('parameters')
