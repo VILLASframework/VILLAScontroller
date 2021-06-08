@@ -54,7 +54,8 @@ class KubernetesManager(Manager):
                     elif eo.reason == 'SuccessfulCreate':
                         ic.change_state('running')
                     else:
-                        self.logger.info('Reason \'%s\' not handled for kubernetes simulator', eo.reason)
+                        self.logger.info('Reason \'%s\' not handled \
+                            for kubernetes simulator', eo.reason)
 
     def create(self, message):
         parameters = message.payload.get('parameters', {})
