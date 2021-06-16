@@ -24,4 +24,3 @@ properties:
           containers:
           - image: dpsimrwth/slew-villas
             name: slew-dpsim
-            
