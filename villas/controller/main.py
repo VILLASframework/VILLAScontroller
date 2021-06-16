@@ -7,6 +7,8 @@ import os.path
 import datetime
 import termcolor
 
+from amqp.exceptions import RecoverableConnectionError
+
 from villas.controller import __version__ as version
 
 from villas.controller.config import Config, ConfigType
@@ -118,6 +120,8 @@ def main():
 
             c.release()
 
+    except (socket.error, RecoverableConnectionError):
+        LOGGER.error("Recoverable Connection Error")
     except ConnectionRefusedError:
         LOGGER.error('Connection refused!')
     except socket.timeout:
