@@ -211,8 +211,11 @@ class Component:
     def publish_status(self):
         if self.producer is None:
             return
-
-        self.producer.publish(self.status, headers=self.headers)
+        try:
+            self.producer.publish(self.status, headers=self.headers)
+        except (socket.error, RecoverableConnectionError):
+            self.logger.warn('publish failed for component %s, revive connection..', self.name)
+            self.producer.revive(self.connection.channel())
 
     def publish_status_periodically(self):
         self.logger.info('Start state publish thread')
