@@ -6,7 +6,7 @@ import os
 import uuid
 import threading
 
-#from amqp.exceptions import RecoverableConnectionError
+# from amqp.exceptions import RecoverableConnectionError
 
 from villas.controller import __version__ as version
 from villas.controller.exceptions import SimulationException
