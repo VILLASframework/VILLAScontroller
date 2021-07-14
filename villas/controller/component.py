@@ -6,7 +6,7 @@ import os
 import uuid
 import threading
 
-from amqp.exceptions import RecoverableConnectionError
+#from amqp.exceptions import RecoverableConnectionError
 
 from villas.controller import __version__ as version
 from villas.controller.exceptions import SimulationException
@@ -48,7 +48,7 @@ class Component:
         self.publish_status_thread_stop = threading.Event()
         self.publish_status_thread = threading.Thread(
             target=self.publish_status_periodically)
-        #self.publish_status_thread.setDaemon(True)
+        # self.publish_status_thread.setDaemon(True)
 
     def on_ready(self):
         self.publish_status_thread.start()
@@ -220,10 +220,10 @@ class Component:
         self.logger.info("Publishing..")
         self.producer.publish(self.status, headers=self.headers)
         self._publish_lock.release()
-        #except (socket.error, RecoverableConnectionError):
+        # except (socket.error, RecoverableConnectionError):
         #    self.logger.warn('publish failed for component %s, \
         #        revive connection..', self.name)
-            #self.producer.revive(self.connection.channel())
+        #    self.producer.revive(self.connection.channel())
 
     def publish_status_periodically(self):
         self.logger.info('Start state publish thread')
