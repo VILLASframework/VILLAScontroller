@@ -36,6 +36,16 @@ class KubernetesManager(Manager):
 
         raise RuntimeError(f'Namespace {ns} does not exist')
 
+    def _match(self, stringA, stringB):
+        ret = False
+        if stringA == stringB:
+            ret = True
+        elif len(stringA) < len(stringB):
+            ret = True if stringA in stringB else False
+        elif len(stringB) < len(stringA):
+            ret = True if stringB in stringA else False
+        return ret
+
     def _run_event_watcher(self):
         w = k8s.watch.Watch()
         c = k8s.client.CoreV1Api()
@@ -46,14 +56,17 @@ class KubernetesManager(Manager):
 
             self.logger.info('Event: %s (reason=%s)', eo.message, eo.reason)
             for ic in self.jobs:
-                if ic.jobname == eo.involved_object.name:
+                if self._match(ic.jobname, eo.involved_object.name):
                     if eo.reason == 'Completed':
                         ic.change_state('resetting')
                         ic.stop("nomessage")
                         ic.change_state('idle')
                     elif eo.reason == 'SuccessfulCreate':
                         ic.change_state('running')
+                    elif eo.reason == 'BackoffLimitExceeded':
+                        ic.change_state('error')
                     else:
+                        self.logger.info('##############################')
                         self.logger.info('Reason \'%s\' not handled \
                             for kubernetes simulator', eo.reason)
 

@@ -133,6 +133,7 @@ class KubernetesJob(Simulator):
         self.jobname = self.job.metadata.name
 
     def stop(self, message):
+        #self.change_state('stopping')
         b = k8s.client.BatchV1Api()
         body = k8s.client.V1DeleteOptions(propagation_policy='Background')
         self.job = b.delete_namespaced_job(

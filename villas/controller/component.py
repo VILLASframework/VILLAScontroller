@@ -34,6 +34,7 @@ class Component:
 
         self._state = 'idle'
         self._status_fields = {}
+        self._publish_lock = threading.Lock()
 
         self.logger = logging.getLogger(
             f'villas.controller.{self.category}.{self.type}:{self.uuid}')
@@ -47,6 +48,7 @@ class Component:
         self.publish_status_thread_stop = threading.Event()
         self.publish_status_thread = threading.Thread(
             target=self.publish_status_periodically)
+        #self.publish_status_thread.setDaemon(True)
 
     def on_ready(self):
         self.publish_status_thread.start()
@@ -212,13 +214,16 @@ class Component:
 
     def publish_status(self):
         if self.producer is None:
+            self.logger.warn("producer is None")
             return
-        try:
-            self.producer.publish(self.status, headers=self.headers)
-        except (socket.error, RecoverableConnectionError):
-            self.logger.warn('publish failed for component %s, \
-                revive connection..', self.name)
-            self.producer.revive(self.connection.channel())
+        self._publish_lock.acquire()
+        self.logger.info("Publishing..")
+        self.producer.publish(self.status, headers=self.headers)
+        self._publish_lock.release()
+        #except (socket.error, RecoverableConnectionError):
+        #    self.logger.warn('publish failed for component %s, \
+        #        revive connection..', self.name)
+            #self.producer.revive(self.connection.channel())
 
     def publish_status_periodically(self):
         self.logger.info('Start state publish thread')
